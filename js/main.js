@@ -366,3 +366,309 @@ mailChimp();
         });
 
 })(jQuery);	
+
+// !! CARROUSEL ABOUT
+const galleryTrack = document.getElementById("galleryTrack");
+  const galleryItems = document.querySelectorAll(".gallery-item img");
+  const galleryPrev = document.getElementById("galleryPrev");
+  const galleryNext = document.getElementById("galleryNext");
+
+  const lightbox = document.getElementById("lightbox");
+  const lightboxImage = document.getElementById("lightboxImage");
+  const lightboxClose = document.getElementById("lightboxClose");
+  const lightboxBackdrop = document.getElementById("lightboxBackdrop");
+  const lightboxPrev = document.getElementById("lightboxPrev");
+  const lightboxNext = document.getElementById("lightboxNext");
+
+  let currentSlide = 0;
+  let currentLightboxIndex = 0;
+
+  function getVisibleItems() {
+    if (window.innerWidth <= 480) return 1;
+    if (window.innerWidth <= 768) return 2;
+    if (window.innerWidth <= 992) return 3;
+    return 4;
+  }
+
+  function updateCarousel() {
+    const visibleItems = getVisibleItems();
+    const item = document.querySelector(".gallery-item");
+    if (!item) return;
+
+    const gap = 16;
+    const itemWidth = item.offsetWidth + gap;
+    galleryTrack.style.transform = `translateX(-${currentSlide * itemWidth}px)`;
+
+    const maxSlide = Math.max(galleryItems.length - visibleItems, 0);
+
+    galleryPrev.style.opacity = currentSlide === 0 ? "0.4" : "1";
+    galleryNext.style.opacity = currentSlide >= maxSlide ? "0.4" : "1";
+  }
+
+  galleryNext.addEventListener("click", () => {
+    const visibleItems = getVisibleItems();
+    const maxSlide = Math.max(galleryItems.length - visibleItems, 0);
+
+    if (currentSlide < maxSlide) {
+      currentSlide++;
+      updateCarousel();
+    }
+  });
+
+  galleryPrev.addEventListener("click", () => {
+    if (currentSlide > 0) {
+      currentSlide--;
+      updateCarousel();
+    }
+  });
+
+  function openLightbox(index) {
+    currentLightboxIndex = index;
+    lightboxImage.src = galleryItems[index].src;
+    lightboxImage.alt = galleryItems[index].alt;
+    lightbox.classList.add("active");
+    document.body.style.overflow = "hidden";
+  }
+
+  function closeLightbox() {
+    lightbox.classList.remove("active");
+    document.body.style.overflow = "";
+  }
+
+  function showNextImage() {
+    currentLightboxIndex = (currentLightboxIndex + 1) % galleryItems.length;
+    lightboxImage.src = galleryItems[currentLightboxIndex].src;
+    lightboxImage.alt = galleryItems[currentLightboxIndex].alt;
+  }
+
+  function showPrevImage() {
+    currentLightboxIndex = (currentLightboxIndex - 1 + galleryItems.length) % galleryItems.length;
+    lightboxImage.src = galleryItems[currentLightboxIndex].src;
+    lightboxImage.alt = galleryItems[currentLightboxIndex].alt;
+  }
+
+  galleryItems.forEach((img, index) => {
+    img.addEventListener("click", () => openLightbox(index));
+  });
+
+  lightboxClose.addEventListener("click", closeLightbox);
+  lightboxBackdrop.addEventListener("click", closeLightbox);
+  lightboxNext.addEventListener("click", showNextImage);
+  lightboxPrev.addEventListener("click", showPrevImage);
+
+  document.addEventListener("keydown", (e) => {
+    if (!lightbox.classList.contains("active")) return;
+
+    if (e.key === "Escape") closeLightbox();
+    if (e.key === "ArrowRight") showNextImage();
+    if (e.key === "ArrowLeft") showPrevImage();
+  });
+
+  window.addEventListener("resize", updateCarousel);
+  window.addEventListener("load", updateCarousel);
+
+  document.addEventListener("DOMContentLoaded", function () {
+  const galleryTrack = document.getElementById("galleryTrack");
+  const galleryCarousel = document.getElementById("galleryCarousel");
+  const galleryPrev = document.getElementById("galleryPrev");
+  const galleryNext = document.getElementById("galleryNext");
+
+  const lightbox = document.getElementById("lightbox");
+  const lightboxImage = document.getElementById("lightboxImage");
+  const lightboxClose = document.getElementById("lightboxClose");
+  const lightboxBackdrop = document.getElementById("lightboxBackdrop");
+  const lightboxPrev = document.getElementById("lightboxPrev");
+  const lightboxNext = document.getElementById("lightboxNext");
+
+  const originalImages = Array.from(galleryTrack.querySelectorAll(".gallery-item img")).map(img => ({
+    src: img.getAttribute("src"),
+    alt: img.getAttribute("alt")
+  }));
+
+  let currentLightboxIndex = 0;
+
+  let visibleItems = getVisibleItems();
+  let cloneCount = visibleItems;
+  let currentIndex = cloneCount;
+  let isAnimating = false;
+
+  function getVisibleItems() {
+    if (window.innerWidth <= 480) return 1;
+    if (window.innerWidth <= 768) return 2;
+    if (window.innerWidth <= 992) return 3;
+    return 4;
+  }
+
+  function buildTrack() {
+    galleryTrack.innerHTML = "";
+
+    visibleItems = getVisibleItems();
+    cloneCount = visibleItems;
+
+    const itemsToPrepend = originalImages.slice(-cloneCount);
+    const itemsToAppend = originalImages.slice(0, cloneCount);
+
+    const finalItems = [
+      ...itemsToPrepend,
+      ...originalImages,
+      ...itemsToAppend
+    ];
+
+    finalItems.forEach((imgData, index) => {
+      const item = document.createElement("div");
+      item.className = "gallery-item";
+
+      const img = document.createElement("img");
+      img.src = imgData.src;
+      img.alt = imgData.alt;
+
+      let realIndex;
+
+      if (index < cloneCount) {
+        realIndex = originalImages.length - cloneCount + index;
+      } else if (index >= cloneCount + originalImages.length) {
+        realIndex = index - (cloneCount + originalImages.length);
+      } else {
+        realIndex = index - cloneCount;
+      }
+
+      img.dataset.index = realIndex;
+      item.appendChild(img);
+      galleryTrack.appendChild(item);
+    });
+
+    currentIndex = cloneCount;
+    applyItemWidths();
+    jumpToIndex(currentIndex);
+    bindGalleryClicks();
+  }
+
+  function applyItemWidths() {
+    const items = galleryTrack.querySelectorAll(".gallery-item");
+    const gap = 16;
+    const totalGap = gap * (visibleItems - 1);
+    const itemWidth = (galleryCarousel.clientWidth - totalGap) / visibleItems;
+
+    items.forEach(item => {
+      item.style.width = `${itemWidth}px`;
+    });
+  }
+
+  function getStepSize() {
+    const firstItem = galleryTrack.querySelector(".gallery-item");
+    if (!firstItem) return 0;
+
+    const styles = window.getComputedStyle(galleryTrack);
+    const gap = parseFloat(styles.columnGap || styles.gap || 16);
+    return firstItem.offsetWidth + gap;
+  }
+
+  function jumpToIndex(index) {
+    const step = getStepSize();
+    galleryTrack.style.transition = "none";
+    galleryTrack.style.transform = `translateX(-${index * step}px)`;
+  }
+
+  function moveToIndex(index) {
+    const step = getStepSize();
+    galleryTrack.style.transition = "transform 0.45s ease";
+    galleryTrack.style.transform = `translateX(-${index * step}px)`;
+  }
+
+  function nextSlide() {
+    if (isAnimating) return;
+    isAnimating = true;
+    currentIndex++;
+    moveToIndex(currentIndex);
+  }
+
+  function prevSlide() {
+    if (isAnimating) return;
+    isAnimating = true;
+    currentIndex--;
+    moveToIndex(currentIndex);
+  }
+
+  galleryNext.addEventListener("click", nextSlide);
+  galleryPrev.addEventListener("click", prevSlide);
+
+  galleryTrack.addEventListener("transitionend", () => {
+    const totalOriginal = originalImages.length;
+
+    if (currentIndex >= totalOriginal + cloneCount) {
+      currentIndex = cloneCount;
+      jumpToIndex(currentIndex);
+    }
+
+    if (currentIndex < cloneCount) {
+      currentIndex = totalOriginal + cloneCount - 1;
+      jumpToIndex(currentIndex);
+    }
+
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        isAnimating = false;
+      });
+    });
+  });
+
+  function bindGalleryClicks() {
+    const allImgs = galleryTrack.querySelectorAll(".gallery-item img");
+    allImgs.forEach(img => {
+      img.addEventListener("click", () => {
+        openLightbox(parseInt(img.dataset.index, 10));
+      });
+    });
+  }
+
+  function openLightbox(index) {
+    currentLightboxIndex = index;
+    lightboxImage.src = originalImages[index].src;
+    lightboxImage.alt = originalImages[index].alt;
+    lightbox.classList.add("active");
+    document.body.style.overflow = "hidden";
+  }
+
+  function closeLightbox() {
+    lightbox.classList.remove("active");
+    document.body.style.overflow = "";
+  }
+
+  function showNextImage() {
+    currentLightboxIndex = (currentLightboxIndex + 1) % originalImages.length;
+    lightboxImage.src = originalImages[currentLightboxIndex].src;
+    lightboxImage.alt = originalImages[currentLightboxIndex].alt;
+  }
+
+  function showPrevImage() {
+    currentLightboxIndex = (currentLightboxIndex - 1 + originalImages.length) % originalImages.length;
+    lightboxImage.src = originalImages[currentLightboxIndex].src;
+    lightboxImage.alt = originalImages[currentLightboxIndex].alt;
+  }
+
+  lightboxClose.addEventListener("click", closeLightbox);
+  lightboxBackdrop.addEventListener("click", closeLightbox);
+  lightboxNext.addEventListener("click", showNextImage);
+  lightboxPrev.addEventListener("click", showPrevImage);
+
+  document.addEventListener("keydown", (e) => {
+    if (lightbox.classList.contains("active")) {
+      if (e.key === "Escape") closeLightbox();
+      if (e.key === "ArrowRight") showNextImage();
+      if (e.key === "ArrowLeft") showPrevImage();
+    } else {
+      if (e.key === "ArrowRight") nextSlide();
+      if (e.key === "ArrowLeft") prevSlide();
+    }
+  });
+
+  let resizeTimeout;
+  window.addEventListener("resize", () => {
+    clearTimeout(resizeTimeout);
+    resizeTimeout = setTimeout(() => {
+      buildTrack();
+    }, 150);
+  });
+
+  buildTrack();
+});
